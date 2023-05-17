@@ -1,0 +1,9 @@
+mosquitto -p 2023 -c mosquitto.conf -v
+mosquitto_password -u <passwd_file>
+
+
+gcc room.c -lmosquitto -o room.out
+gcc gpsPosition.c -lmosquitto -o gpsPosition.out
+kill -s SIGPIPE 391
+
+./room.out "localhost"

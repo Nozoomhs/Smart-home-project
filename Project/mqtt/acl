@@ -1,0 +1,5 @@
+pattern read /users/+/public/#
+pattern write /users/+/inbox/%u
+
+pattern read /#
+pattern write /#
