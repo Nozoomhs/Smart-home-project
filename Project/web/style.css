@@ -1,14 +1,14 @@
-
-
 body {
   margin: 25px;
 }
-
-
 ul {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.bottomRow{
+	padding-top: 20px;
 }
 
 .status {

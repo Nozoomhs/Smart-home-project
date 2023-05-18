@@ -87,12 +87,21 @@ function onFailure(message) {
 function setCurrentTemp(message){
 	console.log("Setting current temp");
 	for (let i = 1; i < roomCounter; i++) {
-		document.getElementById("currentTemp" + i).innerHTML = message /*+ what is read from mqtt*/;
+		document.getElementById("currentTemp" + i).innerHTML = "current temperature: " + message /*+ what is read from mqtt*/;
 	}
 
 }
+function setHeatingStatus(message){
+	console.log("Setting heating status");
+	for (let i = 1; i < roomCounter; i++) {
+		if(message[i-1] == 'h'){
+		    document.getElementById("heat" + i).innerHTML = "Heating" /*+ what is read from mqtt*/;
+		}else{
+			document.getElementById("heat" + i).innerHTML = "Cooling" /*+ what is read from mqtt*/;
+		}
+	}
+}
 function onMessageArrived(msg){
-	
 	var topic = msg.destinationName;
 	var out_msg = "Message recieved" +msg.payloadString+ "with topic: " + topic +"<br>";
 	console.log(out_msg);
@@ -105,9 +114,10 @@ function onMessageArrived(msg){
 		else{
 			home = false;
 		}
-	}
-	else if (topic == sensordata){
+	}else if (topic == sensordata){
 		setCurrentTemp(msg.payloadString);
+	}else if (topic == feedbacktopic){
+		setHeatingStatus(msg.payloadString);
 	}
 
 }
@@ -119,7 +129,6 @@ function publish(topic,message){
 }
 async function startMQTTLoop() {
 	MQTTconnect();
-
 }
 
 function addRoom() {

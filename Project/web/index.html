@@ -20,6 +20,7 @@
              <label for="pwd">Home temp:</label>
              <input id="input1home">
              <label id="currentTemp1">current temperature: </label>
+			 <label id="heat1"></label>
          </form>
          <span class="hidden" id="room2">
              <h2>Room 2</h2>
@@ -29,6 +30,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input2home">
                  <label id="currentTemp2">current temperature: </label>
+				 <label id="heat2"></label>
              </form>
          </span>
          <span class="hidden" id="room3">
@@ -39,6 +41,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input3home">
                  <label id="currentTemp3">current temperature: </label>
+				 <label id="heat3"></label>
              </form>
          </span>
          <span class="hidden" id="room4">
@@ -49,6 +52,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input4home">
                  <label id="currentTemp4">current temperature: </label>
+				 <label id="heat4"></label>
              </form>
          </span>
          <span class="hidden" id="room5">
@@ -59,6 +63,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input5home">
                  <label id="currentTemp5">current temperature: </label>
+				 <label id="heat5"></label>
              </form>
          </span>
          <span class="hidden" id="room6">
@@ -69,6 +74,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input6home">
                  <label id="currentTemp6">current temperature: </label>
+				 <label id="heat6"></label>
              </form>
          </span>
          <span class="hidden" id="room7">
@@ -79,6 +85,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input7home">
                  <label id="currentTemp7">current temperature: </label>
+				 <label id="heat7"></label>
              </form>
          </span>
          <span class="hidden" id="room8">
@@ -89,6 +96,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input8home">
                  <label id="currentTemp8">current temperature: </label>
+				 <label id="heat8"></label>
              </form>
          </span>
          <span class="hidden" id="room9">
@@ -99,6 +107,7 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input9home">
                  <label id="currentTemp9">current temperature: </label>
+				 <label id="heat9"></label>
              </form>
          </span>
          <span class="hidden" id="room10">
@@ -109,10 +118,13 @@
                  <label for="pwd">Home temp:</label>
                  <input id="input10home">
                  <label id="currentTemp10">current temperature: </label>
+				 <label id="heat10"></label>
              </form>
          </span>
-         <button onclick="addRoom()">add room</button>
-		 <button onclick="execChanges()">execute changes</button>
-		 <button onclick="startMQTTLoop()">connect to MQTT</button>
+		 <div class="bottomRow">
+             <button onclick="addRoom()">add room</button>
+		     <button onclick="execChanges()">execute changes</button>
+		     <button onclick="startMQTTLoop()">connect to MQTT</button>
+		 </div>
      </body>
  </html>
