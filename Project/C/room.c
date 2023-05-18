@@ -26,6 +26,7 @@ static int roomPointer                     = 0;
 volatile sig_atomic_t ParentRecievedSignal = 0;
 volatile sig_atomic_t CreateNewRoom        = 0;
 static int children[MAX_CHILD_NUMBER];
+static int diff[MAX_CHILD_NUMBER];
 
 void* create_shared_memory(size_t size) {
     int protection = PROT_READ | PROT_WRITE;
@@ -74,7 +75,7 @@ void taskOfChildren(struct sigaction *const act){
     sigaction(SIGRTMIN, act, NULL);
     float tempArray[2];
     while(1){
-    printf("%f - %f\n",CAST(shmem + roomPointer * OFFSET),CAST(shmem + roomPointer *OFFSET + OFFSET));
+        //printf("%f - %f\n",CAST(shmem + roomPointer * OFFSET),CAST(shmem + roomPointer *OFFSET + OFFSET));
         if(CAST(shmem + roomPointer *OFFSET) > 
            CAST(shmem + roomPointer *OFFSET + OFFSET))
             kill(getppid(),SIGRTMIN);
@@ -91,7 +92,7 @@ void addRoom(int ID){
 // 
 //This function shall be replaced by the real values read from mosquitto
 void setTemp(const struct mosquitto_message *message, bool isDesired){
-    printf("%s\n", message->payload);
+    //printf("%s\n", message->payload);
     for(int i = 0; i < roomPointer; i++){
         char* mess = message->payload;  
         char *temp = strtok(mess, " ");  
@@ -118,27 +119,20 @@ void signalChildren(){
 }
 
 void checkValues( struct mosquitto *  const mosq){
-    char buffer[BUFFER_SIZE];
-//MQTT will write return value here
-    int mid_sent;
-    /*
+
     for(int i = 0; i < roomPointer; i++){
         if(CAST(shmem + i * OFFSET) > CAST(shmem + i * OFFSET + OFFSET)){
-            snprintf(buffer,BUFFER_SIZE,"Room %d is HEATING\n",i);
-            printf("Room %d is HEATING\n",i);
+            if(diff[i] != 1 ){
+                diff[i] = 1;
+                printf("Room %d is heating",i);
+            }
         }else{
-            snprintf(buffer,BUFFER_SIZE,"Room %d is COOLING\n",i);
-            printf("Room %d is COOLING\n",i);
-        }
-        memset(buffer,0,BUFFER_SIZE); 
-//QoS=2 means the message will *exactly* arrive once
-        
+            if(diff[i] != 0 ){
+                diff[i] = 0;
+                printf("Room %d is cooling",i);
+            }
+        } 
     }
-    */
-   memcpy(shmem, buffer, roomPointer*OFFSET*2);
-   mosquitto_publish(mosq, &mid_sent, TOPIC_CONTROL, strlen(buffer), buffer, 2, 0);
-   //memset(buffer,0,BUFFER_SIZE); 
-    
 }
 //Mosquitto related functions-------------------------------------------
 void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
@@ -252,7 +246,7 @@ int main(int argc, char *argv[]){
                 signalChildren();
                 sleep(2);
                 //printf("Parent signal status = %d\n",ParentRecievedSignal);
-                printf("-----Next step-----\n");
+                //printf("-----Next step-----\n");
                 if(ParentRecievedSignal)
                     checkValues(mosq);
                 ParentRecievedSignal = 0;
