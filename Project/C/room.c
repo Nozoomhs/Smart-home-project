@@ -91,6 +91,7 @@ void addRoom(int ID){
 // 
 //This function shall be replaced by the real values read from mosquitto
 void setTemp(const struct mosquitto_message *message, bool isDesired){
+    printf("%s\n", message->payload);
     for(int i = 0; i < roomPointer; i++){
         char* mess = message->payload;  
         char *temp = strtok(mess, " ");  
@@ -102,6 +103,7 @@ void setTemp(const struct mosquitto_message *message, bool isDesired){
             memcpy(shmem+i*2*OFFSET, &r, OFFSET);
 
     }
+    
 
 }
 void arrivingHome(){
@@ -119,6 +121,7 @@ void checkValues( struct mosquitto *  const mosq){
     char buffer[BUFFER_SIZE];
 //MQTT will write return value here
     int mid_sent;
+    /*
     for(int i = 0; i < roomPointer; i++){
         if(CAST(shmem + i * OFFSET) > CAST(shmem + i * OFFSET + OFFSET)){
             snprintf(buffer,BUFFER_SIZE,"Room %d is HEATING\n",i);
@@ -127,11 +130,15 @@ void checkValues( struct mosquitto *  const mosq){
             snprintf(buffer,BUFFER_SIZE,"Room %d is COOLING\n",i);
             printf("Room %d is COOLING\n",i);
         }
+        memset(buffer,0,BUFFER_SIZE); 
 //QoS=2 means the message will *exactly* arrive once
-        mosquitto_publish(mosq, &mid_sent, TOPIC_CONTROL, strlen(buffer), buffer, 2, 0);
-        //mosquitto_loop(mosq,1,1);
-        memset(buffer,0,BUFFER_SIZE);
+        
     }
+    */
+   memcpy(shmem, buffer, roomPointer*OFFSET*2);
+   mosquitto_publish(mosq, &mid_sent, TOPIC_CONTROL, strlen(buffer), buffer, 2, 0);
+   //memset(buffer,0,BUFFER_SIZE); 
+    
 }
 //Mosquitto related functions-------------------------------------------
 void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
@@ -241,7 +248,7 @@ int main(int argc, char *argv[]){
 //Waiting 'till child initiates it's handler
             sleep(1);
             while(1){
-                mosquitto_loop(mosq,-1,2);
+                mosquitto_loop(mosq,-1,1);
                 signalChildren();
                 sleep(2);
                 //printf("Parent signal status = %d\n",ParentRecievedSignal);
