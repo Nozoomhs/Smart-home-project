@@ -1,7 +1,7 @@
 mosquitto -p 2023 -c mosquitto.conf -v
 mosquitto_password -u <passwd_file>
 
-
+cd /mnt/c/users/milan/source/repos/Smart-home-project/Project
 gcc room.c -lmosquitto -o room.out
 gcc gpsPosition.c -lmosquitto -o gpsPosition.out
 kill -s SIGPIPE 391

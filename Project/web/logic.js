@@ -1,12 +1,12 @@
 var roomCounter = 2;
 var mqtt;
 var reconnectTimeout=2000;
-var host = "192.168.43.142";
+var host = "localhost"//"192.168.43.142";
 var port = 9001;
-var roomtopic = "/addroom";
+var roomtopic = "/control/addroom";
 var temptopic = "/control/temp";
 var gpstopic = "/gps/isHome";
-var feedbacktopic= "/control/feedback";
+var feedbacktopic= "/room/feedback";
 var hometopic = "/control/isHome";
 var sensordata = "/sensordata"
 var home = false;
@@ -19,10 +19,9 @@ function sleep(ms) {
 function onConnect(){
 	console.log("Connected");
 	mqtt.subscribe(sensordata);
-	mqtt.subscribe(temptopic);
+	mqtt.subscribe(gpstopic);
+	mqtt.subscribe(feedbacktopic);
 	message = new Paho.MQTT.Message("Client Connected Sucessfully");
-    message.destinationName = gpstopic;
-    mqtt.send(message);
 }
 
 function HomeAway(indicator)

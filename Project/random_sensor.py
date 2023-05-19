@@ -13,11 +13,7 @@ def generate():
     sense_data = []
     # Get environmental data
     sense_data.append(random.uniform(10.5, 75.5))
-    sense_data.append(' ')
-    sense_data.append(float(random.uniform(1000, 1100)))
-    sense_data.append(' ')
     # Get the date and times
-    sense_data.append(datetime.now())
     list = ''.join(map(str,sense_data))
     print(list)
     return list
