@@ -24,41 +24,26 @@ function onConnect(){
     message.destinationName = gpstopic;
     mqtt.send(message);
 }
-/*
-function onConnect() {
-	// Once a connection has been made, make a subscription and send a message.
-	console.log("onConnect");
-	client.subscribe("/World");
-	message = new Paho.MQTT.Message("Hello");
-	message.destinationName = "/World";
-	client.send(message);
-  };
-*/
-/*
-function onConnectionLost(responseObject) {
-	if (responseObject.errorCode !== 0)
-	  console.log("onConnectionLost:"+responseObject.errorMessage);
-  };
-function onMessageArrived(message) {
-	console.log("onMessageArrived:"+message.payloadString);
-  };
-  */
+
 function HomeAway(indicator)
 {
-	if(indicator == true)
+	console.log(indicator);
+	if(indicator == "true")
 	{
-		document.getElementsByClassName("status home").style.visibility="visible";
-		document.getElementsByClassName("status away").style.visibility="hidden";
+		document.getElementsByClassName("status home")[0].style.display="block";
+		document.getElementsByClassName("status away")[0].style.display="none";
 	}
 	else{
-		document.getElementsByClassName("status home").style.visibility="hidden";
-		document.getElementsByClassName("status away").style.visibility="visible";
+		document.getElementsByClassName("status home")[0].style.display="none";
+		document.getElementsByClassName("status away")[0].style.display="block";
 	}
 	
 }
 function MQTTconnect() {
 	console.log("connecting to "+ host +" "+ port);
-	mqtt = new Paho.MQTT.Client(host,port,"clientjs");
+	document.getElementsByClassName("status home")[0].style.display="none";
+	document.getElementsByClassName("status away")[0].style.display="none";
+	mqtt = new Paho.MQTT.Client(host,port,"localhost");
 	var options = {
 		timeout: 3,
 		onSuccess: onConnect,
@@ -67,19 +52,7 @@ function MQTTconnect() {
 	mqtt.onMessageArrived = onMessageArrived;
 	mqtt.connect(options); //connect
 	}
-/*
-function MQTTconnect(){
-	console.log("connection to "+host +" " +port);
-	var options = {
-		onSuccess:onConnect,
-		onFailure:onFailure,
-	};
-	mqtt= new Paho.MQTT.Client(host,port,"controlapp");
-	mqtt.onMessageArrived = onMessageArrived;
-	mqtt.connect(options);
 
-}
-*/
 function onFailure(message) {
 	console.log("Connection Attempt to Host "+host+"Failed");
 	setTimeout(MQTTconnect, reconnectTimeout);
@@ -107,16 +80,14 @@ function onMessageArrived(msg){
 	console.log(out_msg);
 	
 	if(topic == gpstopic){
-		publish(hometopic,"true");
-		if(msg.payloadString == "1"){
-			home = true;
-		}
-		else{
-			home = false;
-		}
-	}else if (topic == sensordata){
+		HomeAway(msg.payloadString)
+		publish(hometopic,msg.payloadString);
+	}
+
+	else if (topic == sensordata){
 		setCurrentTemp(msg.payloadString);
-	}else if (topic == feedbacktopic){
+	}
+	else if (topic == feedbacktopic){
 		setHeatingStatus(msg.payloadString);
 	}
 

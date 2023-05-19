@@ -12,19 +12,13 @@ ul {
 }
 
 .status {
-  &.open:before {
+  &.home:before {
     background-color: #94E185;
     border-color: #78D965;
     box-shadow: 0px 0px 4px 1px #94E185;
   }
 
-  &.in-progress:before {
-    background-color: #FFC182;
-    border-color: #FFB161;
-    box-shadow: 0px 0px 4px 1px #FFC182;
-  }
-  
-  &.dead:before {
+  &.away:before {
     background-color: #C9404D;
     border-color: #C42C3B;
     box-shadow: 0px 0px 4px 1px #C9404D;

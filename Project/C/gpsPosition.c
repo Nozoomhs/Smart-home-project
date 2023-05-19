@@ -12,7 +12,7 @@ struct position{
     short x;
     short y;
 };
-#define TOPIC_CONTROL_GPS  "/gps/isHome\0"
+#define TOPIC_CONTROL_GPS  "/gps/isHome"
 #define MAX_DISTANCE 100
 double getTime()
 {
@@ -28,8 +28,8 @@ void restartTimer(const timer_t timerID, struct itimerspec *const timer){
 }
 
 int checkPosition(const struct position pos){
-    return pos.x > 47 && pos.x < 60 &&
-           pos.y > 47 && pos.y < 60;
+    return pos.x > 47 && pos.x < 80 &&
+           pos.y > 47 && pos.y < 75;
 }
 
 short moveAround(const short val){
@@ -135,6 +135,8 @@ int main(int argc, char *argv[]){
     mosquitto_message_callback_set(mosq, my_message_callback);
     int  return_value;
     int* pt;
+    char* true_val = "true";
+    char* false_val = "false";
     while (1)
     {
         pos.x += moveAround(pos.x);
@@ -142,7 +144,13 @@ int main(int argc, char *argv[]){
         printf("%d\n",checkPosition(pos));
         return_value = checkPosition(pos);
         pt = &return_value;
-        mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , sizeof(int),pt, 0, false);
+        if(return_value == 1)
+        {
+            mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , strlen(true_val),true_val, 0, false);
+        }
+        else
+        mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , strlen(false_val),false_val, 0, false);
+        //mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , sizeof(int),pt, 0, false);
         sleep(1);
         printf("Position: x:%d y:%d\n",pos.x,pos.y);
         timer_gettime(timerID, &expires);
