@@ -11,17 +11,20 @@
 #include <sys/mman.h>
 
 
-#define CAST                *(float*)
-#define OFFSET              sizeof(float)
-#define BUFFER_SIZE         20 * OFFSET+11
-#define AWAY_ELEMENT        shmem[20 * OFFSET]
-#define HEATING_ELEMENT     shmem[20 * OFFSET+roomPointer]
-#define MAX_CHILD_NUMBER    10
-#define TOPIC_SENSOR        "/sensordata\0"
-#define TOPIC_ADD_ROOM      "/control/addroom\0"
-#define TOPIC_CONTROL       "/room/feedback\0"
-#define TOPIC_CONTROL_TEMP  "/control/temp\0"
-#define TOPIC_CONTROL_HOMEAWAY   "/control/isHome\0"
+#define CAST                   *(float*)
+#define OFFSET                 sizeof(float)
+#define BUFFER_SIZE            20 * OFFSET+11
+#define AWAY_ELEMENT           shmem[20 * OFFSET]
+#define HEATING_ELEMENT        shmem[20 * OFFSET + roomPointer]
+#define MAX_CHILD_NUMBER       10
+#define OFFSET_FOR_ACTUAL      3 * OFFSET + 2 * OFFSET
+#define OFFSET_FOR_AWAY        3 * OFFSET
+#define OFFSET_FOR_HOME        3 * OFFSET + OFFSET
+#define TOPIC_SENSOR           "/sensordata\0"
+#define TOPIC_ADD_ROOM         "/control/addroom\0"
+#define TOPIC_CONTROL          "/room/feedback\0"
+#define TOPIC_CONTROL_TEMP     "/control/temp\0"
+#define TOPIC_CONTROL_HOMEAWAY "/control/isHome\0"
 
 
 char *shmem                                = NULL;
@@ -37,32 +40,7 @@ void* create_shared_memory(size_t size) {
     int visibility = MAP_SHARED | MAP_ANONYMOUS;
     return mmap(NULL, size + 1, protection, visibility, -1, 0);
 }
-int lock_memory(char   *addr,
-            size_t  size)
-{
-  unsigned long    page_offset, page_size;
 
-  page_size = sysconf(_SC_PAGE_SIZE);
-  page_offset = (unsigned long) addr % page_size;
-
-  addr -= page_offset;  /* Adjust addr to page boundary */
-  size += page_offset;  /* Adjust size with page_offset */
-
-  return ( mlock(addr, size) );  /* Lock the memory */
-}
-int unlock_memory(char   *addr,
-              size_t  size)
-{
-  unsigned long    page_offset, page_size;
-
-  page_size = sysconf(_SC_PAGE_SIZE);
-  page_offset = (unsigned long) addr % page_size;
-
-  addr -= page_offset;  /* Adjust addr to page boundary */
-  size += page_offset;  /* Adjust size with page_offset */
-
-  return ( munlock(addr, size) );  /* Unlock the memory */
-}
 
 void sig_handler_child(){}
 
@@ -79,35 +57,29 @@ void taskOfChildren(struct sigaction *const act){
     sigaction(SIGRTMIN, act, NULL);
     float tempArray[2];
     while(1){
-        //printf("%f, %f\n",CAST(shmem + roomPointer * 3 * OFFSET), CAST(shmem + roomPointer * 3 * OFFSET + 2 * OFFSET));
+        //printf("%f, %f\n",CAST(shmem + roomPointer * OFFSET_FOR_AWAY), CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL));
         if(HEATING_ELEMENT == 'c'){
             if(AWAY_ELEMENT == 'a'){
-                if(CAST(shmem + roomPointer * 3 * OFFSET) > 
-                    CAST(shmem + roomPointer * 3 * OFFSET + 2 * OFFSET))
-
+                if(CAST(shmem + roomPointer * OFFSET_FOR_AWAY) > 
+                    CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL))
                         kill(getppid(),SIGRTMIN);
-            }
-            else{
-                if(CAST(shmem + roomPointer * 3 * OFFSET + OFFSET) > 
-                            CAST(shmem + roomPointer * 3 * OFFSET + 2 * OFFSET))
+            }else{
+                if(CAST(shmem + roomPointer * OFFSET_FOR_HOME) > 
+                    CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL))
                             kill(getppid(),SIGRTMIN);
             }
         }
         else{
              if(AWAY_ELEMENT == 'a'){
-                if(CAST(shmem + roomPointer * 3 * OFFSET) <
-                    CAST(shmem + roomPointer * 3 * OFFSET + 2 * OFFSET))
+                if(CAST(shmem + roomPointer * OFFSET_FOR_AWAY) <
+                    CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL))
                         kill(getppid(),SIGRTMIN);
-            }
-            else{
-                if(CAST(shmem + roomPointer * 3 * OFFSET + OFFSET) <
-                            CAST(shmem + roomPointer * 3 * OFFSET + 2 * OFFSET))
+            }else{
+                if(CAST(shmem + roomPointer * OFFSET_FOR_HOME) <
+                    CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL))
                             kill(getppid(),SIGRTMIN);
             }
-        }
-
-
-	
+        }	
         sigwait(&set, &a);
     }
 }
@@ -128,10 +100,9 @@ void setTemp(const struct mosquitto_message *message, const TempType type){
     if(type == ACTUAL){
         float r = atof(message->payload);
         for(int i = 0; i < roomPointer; i++){
-                memcpy(shmem+i*3*OFFSET+OFFSET*2, &r, OFFSET);
-		    }
-    }
-    else{
+            memcpy(shmem + i * OFFSET_FOR_ACTUAL, &r, OFFSET);
+		}
+    }else{
         char* mess = message->payload;  
         char* token = strtok(mess, " ");  
         int counter = 0;
@@ -139,34 +110,24 @@ void setTemp(const struct mosquitto_message *message, const TempType type){
         while(token !=NULL){
             float r = atof(token);
             if(counter%2 == 0){
-                memcpy(shmem+roomcounter*3*OFFSET, &r, OFFSET);
-                
-            }
-            else{
-                memcpy(shmem+roomcounter*3*OFFSET+OFFSET, &r, OFFSET);
+                memcpy(shmem + roomcounter * OFFSET_FOR_AWAY, &r, OFFSET);
+            }else{
+                memcpy(shmem + roomcounter * OFFSET_FOR_HOME, &r, OFFSET);
                 roomcounter++;
             }
-            token = strtok(NULL, " ");
-            
+            token = strtok(NULL, " ");      
             counter++;
-
         }
-
     }
-
 }
 
 
 void HomeAway(const struct mosquitto_message *message){
-    if(strcmp(message->payload, "true")==0){ 
+    if(strcmp(message->payload, "true")==0)
         AWAY_ELEMENT = 'h';
-    }
-    else{
+    else
         AWAY_ELEMENT = 'a';
-    }
-
 }
-//-----------------------------------------------------------------------
 
 void signalChildren(){
     for(int i=0;i<roomPointer;i++)
@@ -177,29 +138,26 @@ void checkValues( struct mosquitto *  const mosq){
     char buffer[10];
 	int mid_sent;
     for(int i = 0; i < roomPointer; i++){
-        if(CAST(shmem + i * 3 * OFFSET) > CAST(shmem + i * 3* OFFSET + 2*OFFSET)){
-            if(shmem[BUFFER_SIZE+i+1] == 'c'){
+        if(CAST(shmem + i * OFFSET_FOR_AWAY) > CAST(shmem + i * OFFSET_FOR_ACTUAL)){
+            if(shmem[BUFFER_SIZE + i + 1] == 'c'){
                 printf("Room %d is heating\n",i);
 				buffer[i] = 'h';
-                shmem[BUFFER_SIZE+i+1] = 'h';
+                shmem[BUFFER_SIZE + i + 1] = 'h';
             }
         }else{
-            if(shmem[BUFFER_SIZE+i+1] == 'h'){
+            if(shmem[BUFFER_SIZE + i + 1] == 'h'){
                 printf("Room %d is cooling\n",i);
 				buffer[i] = 'c';
-                shmem[BUFFER_SIZE+i+1] = 'c';
+                shmem[BUFFER_SIZE + i + 1] = 'c';
 
             }
-
-
         }
     }
 	mosquitto_publish(mosq, &mid_sent, TOPIC_CONTROL, roomPointer, buffer, 2, 0);
 }
 //Mosquitto related functions-------------------------------------------
 void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
-{
-    
+{ 
     if (message->payloadlen ){
         if(strcmp(message->topic, TOPIC_ADD_ROOM) == 0){
                 CreateNewRoom = 1;
@@ -217,16 +175,9 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
         else if(strcmp(message->topic, TOPIC_CONTROL_HOMEAWAY)==0){
             HomeAway(message->payload);
         }
-        /*
-		else if(strcmp(message->topic, TOPIC_CONTROL_AWAY)==0){
-            goingAway();
-        }
-        */
-    }
-    else{
+    }else{
         printf("%s (null)\n", message->topic);
     }
-    
     fflush(stdout);
 }
 
@@ -237,8 +188,7 @@ void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
         mosquitto_subscribe(mosq, NULL, TOPIC_SENSOR, 0);
         mosquitto_subscribe(mosq, NULL, TOPIC_ADD_ROOM, 0);
         mosquitto_subscribe(mosq, NULL, TOPIC_CONTROL_TEMP, 0);
-    }
-    else{
+    }else{
         printf("Connect failed\n");
     }
 }
@@ -252,13 +202,10 @@ void my_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int 
     printf("\n");
 }
 
-
 int main(int argc, char *argv[]){
 //Mosquitto related variables-------------------------------------------
-    if(argc != 2){
+    if(argc != 2)
         return -1;
-    }
-
     struct mosquitto *mosq = NULL;
     mosquitto_lib_init();
     mosq = mosquitto_new("roommodule", true, NULL);
@@ -290,8 +237,8 @@ int main(int argc, char *argv[]){
     memset (&act, 0, sizeof (act));
 //This element indicates whether the user is home or not
     AWAY_ELEMENT = 'a';
-    memset(&shmem[BUFFER_SIZE-10],'c', 10 );
-    printf("%c", shmem[20 * OFFSET+1]);
+    memset(&shmem[BUFFER_SIZE - 10],'c', 10 );
+    printf("%c", shmem[20 * OFFSET + 1]);
 
     
     if (sigaction (SIGRTMIN, &act, NULL) == -1)
