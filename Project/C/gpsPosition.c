@@ -14,8 +14,7 @@ struct position{
 };
 #define TOPIC_CONTROL_GPS  "/gps/isHome"
 #define MAX_DISTANCE 100
-double getTime()
-{
+double getTime(){
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
     return now.tv_sec + now.tv_nsec * 1e-9;
@@ -51,15 +50,12 @@ void sighandler(){
     exit(1);
 }
 
-   
-void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
-{
+void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message){
     printf("Sent message: %s",message->payload);
     fflush(stdout);
 }
 
-void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
-{
+void my_connect_callback(struct mosquitto *mosq, void *userdata, int result){
     if (!result){
    
         printf("Connected");
@@ -68,7 +64,6 @@ void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
         printf("Connect failed\n");
     }
 }
-
 
 int main(int argc, char *argv[]){
     timer_t timerID;
@@ -91,8 +86,7 @@ int main(int argc, char *argv[]){
     //1. parameter: The timer will use this clock
     //2. parameter: Raised sigevent on expiration (NULL means SIGALRM)
     //3. parameter: The generated timer's ID
-    if (timer_create(CLOCK_REALTIME, &sigev, &timerID))
-    {
+    if (timer_create(CLOCK_REALTIME, &sigev, &timerID)){
         perror("Failed to create Timer");
         exit(1);
     }
@@ -138,8 +132,7 @@ int main(int argc, char *argv[]){
     int* pt;
     char* true_val = "true";
     char* false_val = "false";
-    while (1)
-    {
+    while (1){
         pos.x += moveAround(pos.x);
         pos.y += moveAround(pos.y);
         printf("%d\n",checkPosition(pos));
@@ -167,5 +160,4 @@ int main(int argc, char *argv[]){
     mosquitto_destroy(mosq);
     mosquitto_lib_cleanup();
     return 0;
-
 }
