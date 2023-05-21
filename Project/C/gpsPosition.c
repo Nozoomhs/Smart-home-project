@@ -28,17 +28,17 @@ void restartTimer(const timer_t timerID, struct itimerspec *const timer){
 }
 
 int checkPosition(const struct position pos){
-    return pos.x > 47 && pos.x < 80 &&
-           pos.y > 47 && pos.y < 75;
+    return pos.x > 20 && pos.x < 80 &&
+           pos.y > 20 && pos.y < 80;
 }
 
 short moveAround(const short val){
     short x = rand()%20;
 //Making a coordinate system in a 100x100 mx
     if(val - x  < 0){
-        return 1;
+        return x;
     }else if(val + x > 100){
-        return -1;
+        return -x;
     }else{
         if(x < 11)
             return -x;
@@ -134,6 +134,7 @@ int main(int argc, char *argv[]){
     mosquitto_connect_callback_set(mosq, my_connect_callback);
     mosquitto_message_callback_set(mosq, my_message_callback);
     int  return_value;
+    int previous_return_value=0;
     int* pt;
     char* true_val = "true";
     char* false_val = "false";
@@ -143,15 +144,19 @@ int main(int argc, char *argv[]){
         pos.y += moveAround(pos.y);
         printf("%d\n",checkPosition(pos));
         return_value = checkPosition(pos);
-        pt = &return_value;
-        if(return_value == 1)
+        if(return_value == 1 && previous_return_value !=1)
         {
             mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , strlen(true_val),true_val, 0, false);
+            previous_return_value = 1;
         }
-        else
-        mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , strlen(false_val),false_val, 0, false);
-        //mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , sizeof(int),pt, 0, false);
-        sleep(1);
+        else if(return_value == 0 && previous_return_value !=0)
+        {
+            mosquitto_publish(mosq, NULL, TOPIC_CONTROL_GPS , strlen(false_val),false_val, 0, false);
+            previous_return_value = 0;
+        }
+        
+
+        sleep(2);
         printf("Position: x:%d y:%d\n",pos.x,pos.y);
         timer_gettime(timerID, &expires);
         printf("\tTimer will be expired after %li seconds\n", expires.it_value.tv_sec);

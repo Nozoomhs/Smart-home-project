@@ -15,24 +15,26 @@
 #define OFFSET                 sizeof(float)
 #define BUFFER_SIZE            20 * OFFSET+11
 #define AWAY_ELEMENT           shmem[20 * OFFSET]
-#define HEATING_ELEMENT        shmem[20 * OFFSET + roomPointer]
+#define HEATING_ELEMENT        shmem[20 * OFFSET + roomPointer+1]
 #define MAX_CHILD_NUMBER       10
 #define OFFSET_FOR_ACTUAL      3 * OFFSET + 2 * OFFSET
 #define OFFSET_FOR_AWAY        3 * OFFSET
 #define OFFSET_FOR_HOME        3 * OFFSET + OFFSET
 #define TOPIC_SENSOR           "/sensordata\0"
 #define TOPIC_ADD_ROOM         "/control/addroom\0"
-#define TOPIC_CONTROL          "/room/feedback\0"
+#define TOPIC_CONTROL          "/room/heatingInfo\0"
 #define TOPIC_CONTROL_TEMP     "/control/temp\0"
 #define TOPIC_CONTROL_HOMEAWAY "/control/isHome\0"
+#define BEGIN_HEAT              20 * OFFSET+1
 
 
 char *shmem                                = NULL;
 static int roomPointer                     = 0;
 volatile sig_atomic_t ParentRecievedSignal = 0;
 volatile sig_atomic_t CreateNewRoom        = 0;
-static int diff[MAX_CHILD_NUMBER]          = {0,0,0,0,0,0,0,0,0,0};
+static char diff[MAX_CHILD_NUMBER]          = {'c','c','c','c','c','c','c','c','c','c'};
 static int children[MAX_CHILD_NUMBER];
+
 
 
 void* create_shared_memory(size_t size) {
@@ -57,7 +59,9 @@ void taskOfChildren(struct sigaction *const act){
     sigaction(SIGRTMIN, act, NULL);
     float tempArray[2];
     while(1){
-        //printf("%f, %f\n",CAST(shmem + roomPointer * OFFSET_FOR_AWAY), CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL));
+        //printf("%f, %f, %f, %c,%c,\n",CAST(shmem + roomPointer * OFFSET_FOR_AWAY),CAST(shmem + roomPointer * OFFSET_FOR_HOME), CAST(shmem + roomPointer * OFFSET_FOR_ACTUAL),HEATING_ELEMENT,AWAY_ELEMENT);
+        //printf("%d\n", roomPointer);
+
         if(HEATING_ELEMENT == 'c'){
             if(AWAY_ELEMENT == 'a'){
                 if(CAST(shmem + roomPointer * OFFSET_FOR_AWAY) > 
@@ -127,6 +131,7 @@ void HomeAway(const struct mosquitto_message *message){
         AWAY_ELEMENT = 'h';
     else
         AWAY_ELEMENT = 'a';
+    
 }
 
 void signalChildren(){
@@ -135,25 +140,53 @@ void signalChildren(){
 }
 
 void checkValues( struct mosquitto *  const mosq){
-    char buffer[10];
+    int flag = 0;
 	int mid_sent;
     for(int i = 0; i < roomPointer; i++){
-        if(CAST(shmem + i * OFFSET_FOR_AWAY) > CAST(shmem + i * OFFSET_FOR_ACTUAL)){
-            if(shmem[BUFFER_SIZE + i + 1] == 'c'){
-                printf("Room %d is heating\n",i);
-				buffer[i] = 'h';
-                shmem[BUFFER_SIZE + i + 1] = 'h';
-            }
-        }else{
-            if(shmem[BUFFER_SIZE + i + 1] == 'h'){
-                printf("Room %d is cooling\n",i);
-				buffer[i] = 'c';
-                shmem[BUFFER_SIZE + i + 1] = 'c';
-
+        //printf("%c\n",shmem[BEGIN_HEAT + i ] );ű
+        if(AWAY_ELEMENT == 'a'){
+            if(CAST(shmem + i * OFFSET_FOR_AWAY) > CAST(shmem + i * OFFSET_FOR_ACTUAL)){
+                if(shmem[BEGIN_HEAT + i ] == 'c'){
+                    //printf("Room %d is heating\n",i);
+                    shmem[BEGIN_HEAT + i ] = 'h';
+                    diff[i] = 'h';
+                    flag = 1;
+                }
+                
+            }else{
+                if(shmem[BEGIN_HEAT + i ] == 'h'){
+                    //printf("Room %d is cooling\n",i);
+                    shmem[BEGIN_HEAT + i ] = 'c';
+                    diff[i] = 'c';
+                    flag = 1;
+                }
+                
             }
         }
+        else{
+
+            if(CAST(shmem + i * OFFSET_FOR_HOME) > CAST(shmem + i * OFFSET_FOR_ACTUAL)){
+                if(shmem[BEGIN_HEAT + i ] == 'c'){
+                    //printf("Room %d is heating\n",i);
+                    shmem[BEGIN_HEAT + i ] = 'h';
+                    diff[i] = 'h';
+                    flag = 1;
+                }
+                
+            }else{
+                if(shmem[BEGIN_HEAT + i ] == 'h'){
+                    //printf("Room %d is cooling\n",i);
+                    shmem[BEGIN_HEAT + i ] = 'c';
+                    diff[i] = 'c';
+                    flag = 1;
+                }
+            }
+        }
+
     }
-	mosquitto_publish(mosq, &mid_sent, TOPIC_CONTROL, roomPointer, buffer, 2, 0);
+    //printf("%s\n", buffer);
+    if(flag == 1)
+	mosquitto_publish(mosq, &mid_sent, TOPIC_CONTROL, roomPointer, diff, 2, 0);
 }
 //Mosquitto related functions-------------------------------------------
 void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
@@ -173,7 +206,7 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
                 setTemp(message,AWAY);
         }
         else if(strcmp(message->topic, TOPIC_CONTROL_HOMEAWAY)==0){
-            HomeAway(message->payload);
+            HomeAway(message);
         }
     }else{
         printf("%s (null)\n", message->topic);
@@ -188,6 +221,7 @@ void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
         mosquitto_subscribe(mosq, NULL, TOPIC_SENSOR, 0);
         mosquitto_subscribe(mosq, NULL, TOPIC_ADD_ROOM, 0);
         mosquitto_subscribe(mosq, NULL, TOPIC_CONTROL_TEMP, 0);
+        mosquitto_subscribe(mosq, NULL, TOPIC_CONTROL_HOMEAWAY, 0);
     }else{
         printf("Connect failed\n");
     }

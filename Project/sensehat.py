@@ -12,11 +12,14 @@ sense = SenseHat()
 def get_sense_data():
     sense_data = []
     # Get environmental data
-    sense_data.append(sense.get_temperature())
-    sense_data.append(sense.get_pressure())
-    sense_data.append(sense.get_humidity())
-    # Get the date and time
-    sense_data.append(datetime.now())
+    temperature = sense.get_temperature()
+    if temperature < -10:
+        sense_data.append(-10)
+    elif temperature > 60:
+        sense_data.append(60)
+    else:
+        sense_data.append(temperature)
+        
     return sense_data
 
 def on_publish(client,userdata,result):             #create function for callback
