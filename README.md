@@ -20,6 +20,8 @@ Running mqtt broker requires linux distribution, as it was tested both on Raspbi
 Running the C components also require linux system because of the Real-Time signal handling.
 
 # System overview
+![](sys_overview.PNG)
+The system currently doesn't use humidity or other sensordata, and do not take into consideration anything regarding window handling. These features could be extended later easily.
 # System usage
 Command assuming we start from Project folder
 1. Starting the MQTT broker
