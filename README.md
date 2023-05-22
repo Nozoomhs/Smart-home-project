@@ -62,7 +62,7 @@ In another terminal(OPTIONAL):
  gcc gpsPosition.c -lmosquitto -o gpsPosition.out
 
 ```
-
+7. If ones wishes to change broker adress for the control environment it can be done in web/logic.js with the variable host.
   
 
 
