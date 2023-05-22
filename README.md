@@ -19,6 +19,12 @@ Milán:
 Running mqtt broker requires linux distribution, as it was tested both on Raspbian and Ubuntu OS-s.
 Running the C components also require linux system because of the Real-Time signal handling.
 
+Installed MQTT.
+
+Installed python packages:
+1. Sensehat
+2. paho-mqtt
+
 # System overview
 ![](sys_overview.PNG)
 The system currently doesn't use humidity or other sensordata, and do not take into consideration anything regarding window handling. These features could be extended later easily.
