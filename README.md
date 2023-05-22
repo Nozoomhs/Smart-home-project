@@ -28,6 +28,7 @@ Installed python packages:
 # System overview
 ![](sys_overview.PNG)
 The system currently doesn't use humidity or other sensordata, and do not take into consideration anything regarding window handling. These features could be extended later easily.
+The system is able to handle up to 5 rooms at once.
 # System usage
 Command assuming we start from Project folder
 1. Starting the MQTT broker
