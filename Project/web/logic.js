@@ -116,7 +116,7 @@ async function startMQTTLoop() {
 }
 
 function addRoom() {
-	if(roomCounter < 11){
+	if(roomCounter < 6){
         document.getElementById("room" + roomCounter).classList.remove('hidden');
 		publish(roomtopic,"true");
 	    roomCounter++;
